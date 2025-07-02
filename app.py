@@ -384,14 +384,12 @@ def PAGE_2():
         with col1:
             new_date = st.date_input("Date:", value=datetime.today(), key="live_form_new_date")
             selected_tech = st.selectbox("Tech:", options=[""] + tech_options, index=0, key="live_form_new_tech_select")
-            #if not selected_tech:
-                #selected_tech = st.text_input("Or enter new Tech name:", key="live_form_new_tech_text")
-            new_sla = st.number_input("SLA (e.g., hours/days):", value=0.0, min_value=0.0, format="%.2f", key="live_form_new_sla")
+            sla_options = ["2 Hour", "4 Hour", "2 Day", "4 Day"]
+            new_sla = st.selectbox("Select SLA:", sla_options, key="live_form_new_sla")        
         with col2:
             selected_site = st.selectbox("Site:", options=[""] + site_options, index=0, key="live_form_new_site_select")
-            #if not selected_site:
-                #selected_site = st.text_input("Or enter new Site name:", key="live_form_new_site_text")
             new_hours = st.number_input("Hours:", value=0.0, min_value=0.0, format="%.2f", key="live_form_new_hours")
+            new_additional = st.number_input("Additional ($):", value=0.0, min_value=0.0, format="%.2f", key="form_new_additional")
         add_button = st.form_submit_button("Add New Live Ticket")
         if add_button:
             new_row_data = {
@@ -399,7 +397,8 @@ def PAGE_2():
                 "Tech": selected_tech,
                 "Site": selected_site,
                 "SLA": new_sla,
-                "Hours": new_hours}
+                "Hours": new_hours,
+                "Additional": new_additional}
             try:
                 response = supabase.table("live_dispatches").insert([new_row_data]).execute()
                 if response.data:
