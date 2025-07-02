@@ -41,10 +41,9 @@ def home_page():
         Page 3: Report on Badge Pickup Budget
         """)
     st.markdown("<br>" * 12, unsafe_allow_html=True)
-    #col1, col2, col3 = st.columns([1, 1, 1])
-    #with col2:
-     #   st.image(r"C:\Users\CallawayCrenshaw\OneDrive - Suryl, LLC\Desktop\suryl_logo_rgb.png",
-      #       width = 500)
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        st.image("suryl_logo_rgb.png", width=500)
 
 def PAGE_1():
     st.title("Badging Ticket Dispatches")
