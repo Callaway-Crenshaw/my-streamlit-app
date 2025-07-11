@@ -580,82 +580,113 @@ def PAGE_3():
 
 def PAGE_4():
     st.title("PNL Report")
-
     st.header("Live Dispatches Statistics")
-
-    # Function to load live dispatches data
     def load_live_dispatches_data():
         try:
-            # Fetch all data from live_dispatches.
-            # For counts, we can fetch all, or specifically fetch only the 'SLA' column
-            # if that's all we need for the counts to be more efficient.
-            # Let's fetch all for flexibility, similar to your badging_data load.
             response = supabase.table("live_dispatches").select("*").execute()
             data = response.data
-            
             if data:
                 df_loaded = pd.DataFrame(data)
-
-
-                # Ensure 'SLA' column exists and is string type for value_counts
                 if "SLA" not in df_loaded.columns:
                     st.error("Error: 'SLA' column not found in 'live_dispatches' table.")
                     return pd.DataFrame() # Return empty DataFrame if SLA is missing
                 df_loaded["SLA"] = df_loaded["SLA"].astype(str)
-
                 return df_loaded
             else:
                 return pd.DataFrame() # Return empty DataFrame if no data
         except Exception as e:
             st.error(f"Error loading live dispatches data: {e}")
             return pd.DataFrame()
-
     df_live_dispatches = load_live_dispatches_data()
-
     if not df_live_dispatches.empty:
-        # 1. Count total number of rows
         total_rows = len(df_live_dispatches)
         st.write(f"**Total Number of Live Dispatches (excluding header):** {total_rows}")
-
-        # 2. Count of SLA column for specific values
         st.subheader("SLA Counts")
-
-        # Define the specific SLA values we are looking for
         known_slas = ['2 Hour', '4 Hour', '2 Day', '4 Day']
-        
-        # Calculate counts for known SLAs
         sla_counts_series = df_live_dispatches['SLA'].value_counts()
-        
-        # Initialize counts for display, ensuring all desired keys are present
         display_sla_counts = {sla: sla_counts_series.get(sla, 0) for sla in known_slas}
-        
         other_sla_count = 0
         for sla_val in df_live_dispatches['SLA'].unique():
             if sla_val not in known_slas and pd.notna(sla_val) and sla_val != '':
                 other_sla_count += sla_counts_series.get(sla_val, 0)
         display_sla_counts['Other'] = other_sla_count
-
-        # Display individual counts
         st.write(f"**2 Hour SLA:** {display_sla_counts['2 Hour']}")
         st.write(f"**4 Hour SLA:** {display_sla_counts['4 Hour']}")
         st.write(f"**2 Day SLA:** {display_sla_counts['2 Day']}")
         st.write(f"**4 Day SLA:** {display_sla_counts['4 Day']}")
-        
         if display_sla_counts['Other'] > 0:
             st.write(f"**Other SLA Types:** {display_sla_counts['Other']}")
-            # Show actual rows for "Other" SLAs for inspection
             other_sla_df = df_live_dispatches[~df_live_dispatches['SLA'].isin(known_slas) & df_live_dispatches['SLA'].notna() & (df_live_dispatches['SLA'] != '')]
-            st.dataframe(other_sla_df[['SLA']]) # Only show the SLA column for clarity
-        
-        # Optionally, display a bar chart for better visualization
-        st.subheader("SLA Distribution")
-        
-        # Prepare data for bar chart, ensuring all known_slas are represented
-        chart_data = pd.Series(display_sla_counts)
-        st.bar_chart(chart_data)
+            st.dataframe(other_sla_df[['SLA']])
+    else:
+        st.info("No data found in 'live_dispatches' table or an error occurred.")
+
+
+        st.header("Monthly Financial Analysis")
+
+        if "Date" in df_live_dispatches.columns and not df_live_dispatches['Date'].empty:
+            # Create a 'YYYY-MM' column for grouping and display
+            df_live_dispatches['MonthYear'] = df_live_dispatches['Date'].dt.strftime('%Y-%m')
+            
+            # Get unique month/year options, sorted in descending order
+            month_year_options = sorted(df_live_dispatches['MonthYear'].unique(), reverse=True)
+
+            if month_year_options:
+                selected_month_year = st.selectbox(
+                    "Select Month/Year for Financial Report:",
+                    options=month_year_options,
+                    index=0 # Default to the most recent month
+                )
+
+                # Filter data for the selected month/year
+                df_filtered_month = df_live_dispatches[df_live_dispatches['MonthYear'] == selected_month_year].copy()
+
+                if not df_filtered_month.empty:
+                    # Calculate Totals
+                    total_fn_pay = df_filtered_month["Total FN Pay"].sum()
+                    total_dxc_pay = df_filtered_month["Total DXC Pay"].sum()
+                    total_pnl = df_filtered_month["PNL"].sum()
+                    
+                    # Number of tickets for the month
+                    num_tickets_month = len(df_filtered_month)
+
+                    # Calculate Averages Per Ticket
+                    avg_fn_pay_per_ticket = total_fn_pay / num_tickets_month if num_tickets_month > 0 else 0
+                    avg_dxc_pay_per_ticket = total_dxc_pay / num_tickets_month if num_tickets_month > 0 else 0
+                    avg_pnl_per_ticket = total_pnl / num_tickets_month if num_tickets_month > 0 else 0
+
+                    st.subheader(f"Financial Summary for {selected_month_year}")
+                    
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Total Field Nation Pay", f"${total_fn_pay:,.2f}")
+                    with col2:
+                        st.metric("Total DXC Pay", f"${total_dxc_pay:,.2f}")
+                    with col3:
+                        st.metric("Total PNL", f"${total_pnl:,.2f}")
+
+                    st.markdown("---") # Separator line
+
+                    st.subheader(f"Average Pay Per Ticket for {selected_month_year}")
+                    col4, col5, col6 = st.columns(3)
+                    with col4:
+                        st.metric("Avg FN Pay Per Ticket", f"${avg_fn_pay_per_ticket:,.2f}")
+                    with col5:
+                        st.metric("Avg DXC Pay Per Ticket", f"${avg_dxc_pay_per_ticket:,.2f}")
+                    with col6:
+                        st.metric("Avg PNL Per Ticket", f"${avg_pnl_per_ticket:,.2f}")
+
+                else:
+                    st.info(f"No data available for {selected_month_year}.")
+            else:
+                st.info("No valid month/year data found for financial analysis.")
+        else:
+            st.info("Date column is missing or empty, unable to perform monthly financial analysis.")
 
     else:
         st.info("No data found in 'live_dispatches' table or an error occurred.")
+
+
 
 
 # --- Main Application Logic ---
