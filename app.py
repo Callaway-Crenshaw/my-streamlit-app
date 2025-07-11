@@ -620,25 +620,49 @@ def PAGE_4():
             return pd.DataFrame()
     df_live_dispatches = load_live_dispatches_data()
     if not df_live_dispatches.empty:
+        # --- Total Ticket Breakdown By SLA and Site (All Time) ---
         total_rows = len(df_live_dispatches)
         st.write(f"**Total Ticket Count:** {total_rows}")
-        st.subheader("Total Ticket Breakdown By SLA")
-        known_slas = ['2 Hour', '4 Hour', '2 Day', '4 Day']
-        sla_counts_series = df_live_dispatches['SLA'].value_counts()
-        display_sla_counts = {sla: sla_counts_series.get(sla, 0) for sla in known_slas}
-        other_sla_count = 0
-        for sla_val in df_live_dispatches['SLA'].unique():
-            if sla_val not in known_slas and pd.notna(sla_val) and sla_val.strip() != '':
-                other_sla_count += sla_counts_series.get(sla_val, 0)
-        display_sla_counts['Other'] = other_sla_count
-        st.write(f"**2 Hour SLA:** {display_sla_counts['2 Hour']}")
-        st.write(f"**4 Hour SLA:** {display_sla_counts['4 Hour']}")
-        st.write(f"**2 Day SLA:** {display_sla_counts['2 Day']}")
-        st.write(f"**4 Day SLA:** {display_sla_counts['4 Day']}")
-        if display_sla_counts['Other'] > 0:
-            st.write(f"**Other SLA Types:** {display_sla_counts['Other']}")
-            other_sla_df = df_live_dispatches[~df_live_dispatches['SLA'].isin(known_slas) & df_live_dispatches['SLA'].notna() & (df_live_dispatches['SLA'].astype(str).str.strip() != '')]
-            st.dataframe(other_sla_df[['SLA']])
+        st.subheader("Total Ticket Breakdown By SLA and Site (All Time)")
+
+        # Create columns for side-by-side display
+        col_total_breakdown1, col_total_breakdown2 = st.columns(2)
+
+        with col_total_breakdown1:
+            st.write("#### By SLA Category")
+            known_slas = ['2 Hour', '4 Hour', '2 Day', '4 Day']
+            sla_counts_series = df_live_dispatches['SLA'].value_counts()
+            display_sla_counts = {sla: sla_counts_series.get(sla, 0) for sla in known_slas}
+            
+            other_sla_count = 0
+            for sla_val in df_live_dispatches['SLA'].unique():
+                if sla_val not in known_slas and pd.notna(sla_val) and sla_val.strip() != '':
+                    other_sla_count += sla_counts_series.get(sla_val, 0)
+            display_sla_counts['Other'] = other_sla_count
+
+            # Display individual counts (as originally requested)
+            st.write(f"**2 Hour SLA:** {display_sla_counts['2 Hour']}")
+            st.write(f"**4 Hour SLA:** {display_sla_counts['4 Hour']}")
+            st.write(f"**2 Day SLA:** {display_sla_counts['2 Day']}")
+            st.write(f"**4 Day SLA:** {display_sla_counts['4 Day']}")
+            
+            if display_sla_counts['Other'] > 0:
+                st.write(f"**Other SLA Types:** {display_sla_counts['Other']}")
+                other_sla_df = df_live_dispatches[~df_live_dispatches['SLA'].isin(known_slas) & df_live_dispatches['SLA'].notna() & (df_live_dispatches['SLA'].astype(str).str.strip() != '')]
+                st.dataframe(other_sla_df[['SLA']], hide_index=True) # Added hide_index for consistency
+
+        with col_total_breakdown2:
+            st.write("#### By Site")
+            if "Site" in df_live_dispatches.columns:
+                # Get Site counts for the entire dataset, sorted by value (most tickets first)
+                site_breakdown_total = df_live_dispatches['Site'].value_counts().sort_values(ascending=False)
+                if not site_breakdown_total.empty:
+                    st.dataframe(site_breakdown_total.reset_index().rename(columns={'index': 'Site', 'Site': 'Ticket Count'}), hide_index=True)
+                else:
+                    st.info("No Site breakdown data available.")
+            else:
+                st.info("Site column not available for breakdown.")
+        st.markdown("---") # Separator line
         # --- Monthly Financial Analysis Section ---
         st.markdown("---")
         st.header("Monthly Financial Analysis")
