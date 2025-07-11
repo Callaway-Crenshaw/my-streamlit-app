@@ -583,7 +583,6 @@ def PAGE_4():
     st.header("Live Dispatches Statistics")
     @st.cache_data(ttl=300)
     def load_live_dispatches_data():
-        st.info("Loading live dispatches data from Supabase... This may take a moment.")
         try:
             response = supabase.table("live_dispatches").select("*").execute()
             data = response.data
