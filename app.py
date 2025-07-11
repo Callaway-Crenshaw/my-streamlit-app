@@ -38,7 +38,7 @@ def home_page():
         """)
     st.markdown(
         """
-        Page 3: Report on Badge Pickup Budget
+        Page 3: Report on Badge Pickup Budget, vhanges made
         """)
     st.markdown(
         """
