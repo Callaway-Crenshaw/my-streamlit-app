@@ -618,8 +618,8 @@ def PAGE_4():
             st.write(f"**Other SLA Types:** {display_sla_counts['Other']}")
             other_sla_df = df_live_dispatches[~df_live_dispatches['SLA'].isin(known_slas) & df_live_dispatches['SLA'].notna() & (df_live_dispatches['SLA'] != '')]
             st.dataframe(other_sla_df[['SLA']])
-    else:
-        st.info("No data found in 'live_dispatches' table or an error occurred.")
+        else:
+            st.info("No data found in 'live_dispatches' table or an error occurred.")
 
 
         st.header("Monthly Financial Analysis")
