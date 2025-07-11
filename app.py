@@ -579,6 +579,62 @@ def PAGE_3():
 def PAGE_4():
     st.title("PNL Report")
 
+    st.header("Live Dispatches Statistics")
+
+    try:
+        # Fetch total row count
+        # Supabase equivalent of COUNT(*). Using select('*', count='exact') is common.
+        # We limit to 1 because we only care about the count metadata.
+        response_total = supabase_client.from_('live_dispatches').select('*', count='exact').limit(1).execute()
+        total_rows = response_total.count
+        st.write(f"**Total Number of Live Dispatches (excluding header):** {total_rows}")
+
+        # Fetch SLA counts
+        # This will fetch all data, then we'll process it in pandas for counts.
+        # Alternatively, you could run multiple Supabase queries if you prefer server-side aggregation,
+        # but for specific counts like this, fetching and counting locally with pandas is often clear.
+        response_data = supabase_client.from_('live_dispatches').select('SLA').execute()
+        
+        if response_data.data:
+            df = pd.DataFrame(response_data.data)
+            
+            st.subheader("SLA Counts")
+            
+            # Count occurrences of each SLA type
+            sla_counts = df['SLA'].value_counts().reindex(['2 Hour', '4 Hour', '2 Day', '4 Day', 'Other']).fillna(0).astype(int)
+            
+            # Ensure 'Other' category exists for any unexpected SLAs
+            known_slas = ['2 Hour', '4 Hour', '2 Day', '4 Day']
+            other_sla_count = 0
+            for index, row in df.iterrows():
+                if row['SLA'] not in known_slas:
+                    other_sla_count += 1
+            
+            # Update 'Other' count in the series
+            sla_counts['Other'] = other_sla_count
+
+            # Display individual counts
+            st.write(f"**2 Hour SLA:** {sla_counts.get('2 Hour', 0)}")
+            st.write(f"**4 Hour SLA:** {sla_counts.get('4 Hour', 0)}")
+            st.write(f"**2 Day SLA:** {sla_counts.get('2 Day', 0)}")
+            st.write(f"**4 Day SLA:** {sla_counts.get('4 Day', 0)}")
+            
+            # Display any other unexpected SLA types
+            if other_sla_count > 0:
+                st.write(f"**Other SLA Types:** {other_sla_count}")
+                st.dataframe(df[~df['SLA'].isin(known_slas)]) # Show the actual rows for "Other" SLAs
+            
+            # Optionally, display a bar chart for better visualization
+            st.subheader("SLA Distribution")
+            st.bar_chart(sla_counts)
+
+        else:
+            st.info("No data found in 'live_dispatches' table for SLA analysis.")
+
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+        st.info("Please ensure your Supabase client is correctly initialized and the 'live_dispatches' table exists.")
+
 
 # --- Main Application Logic ---
 st.sidebar.title("Navigation")
