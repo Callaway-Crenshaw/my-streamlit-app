@@ -578,53 +578,126 @@ def PAGE_3():
         st.info("No badging data available to generate badging statistics.")
 
 
-def PAGE_4():
+def PAGE_4(): # Make sure you are passing the 'supabase' client here
     st.title("PNL Report")
     st.header("Live Dispatches Statistics")
+
+    # Use st.cache_data to cache the dataframe loading
+    # This will prevent re-fetching data every time something changes on the page
+    @st.cache_data(ttl=300) # Cache for 5 minutes
     def load_live_dispatches_data():
+        st.info("Loading live dispatches data from Supabase... This may take a moment.")
         try:
+            # It's more efficient to select only the columns you need if the table is very wide.
+            # For this page, we need 'SLA', 'Date', 'Total FN Pay', 'Total DXC Pay', 'PNL'.
+            # If your table has many other columns, specify them directly.
+            # Example: .select("SLA, Date, \"Total FN Pay\", \"Total DXC Pay\", PNL").execute()
+            # Note: Column names with spaces or special characters need double quotes in SQL,
+            # but in Supabase client select, it's often handled correctly without.
+            # Let's stick with '*' for now, assuming the columns are directly available.
             response = supabase.table("live_dispatches").select("*").execute()
             data = response.data
+            
             if data:
                 df_loaded = pd.DataFrame(data)
+                
+                # Debug: Print columns and their types after initial load
+                st.sidebar.markdown("---")
+                st.sidebar.write("### Debug Info (Live Dispatches Initial Load):")
+                st.sidebar.write(f"Columns: {df_loaded.columns.tolist()}")
+                st.sidebar.write(f"DataFrame Info:\n{df_loaded.info(verbose=True, show_counts=True)}")
+                st.sidebar.markdown("---")
+
+                # Ensure 'SLA' column exists and is string type
                 if "SLA" not in df_loaded.columns:
-                    st.error("Error: 'SLA' column not found in 'live_dispatches' table.")
-                    return pd.DataFrame() # Return empty DataFrame if SLA is missing
+                    st.error("Error: 'SLA' column not found in 'live_dispatches' table. Please check your Supabase table schema.")
+                    return pd.DataFrame()
                 df_loaded["SLA"] = df_loaded["SLA"].astype(str)
+
+                # Ensure 'Date' column exists and is converted to datetime
+                if "Date" in df_loaded.columns:
+                    # Explicitly define format if you know it, e.g., format='%Y-%m-%d'
+                    # This can make conversion more robust if date strings are consistent
+                    df_loaded["Date"] = pd.to_datetime(df_loaded["Date"], errors='coerce', format='%Y-%m-%d')
+                    
+                    # Drop rows where Date conversion failed (NaT)
+                    initial_rows = len(df_loaded)
+                    df_loaded.dropna(subset=['Date'], inplace=True)
+                    if len(df_loaded) < initial_rows:
+                        st.warning(f"Removed {initial_rows - len(df_loaded)} rows due to invalid 'Date' values.")
+                else:
+                    st.error("Error: 'Date' column not found in 'live_dispatches' table. Monthly analysis will not be available.")
+                    return pd.DataFrame() # Return empty if Date column is critical for this page
+
+                # Check the dtype of 'Date' after conversion and NaT dropping
+                if not pd.api.types.is_datetime64_any_dtype(df_loaded['Date']):
+                    st.error(f"Error: 'Date' column is not a datetime type after conversion. Current type: {df_loaded['Date'].dtype}. Check date format in Supabase.")
+                    return pd.DataFrame() # Stop if Date is still not datetime
+
+                # Ensure financial columns exist and are converted to numeric
+                financial_cols = ["Total FN Pay", "Total DXC Pay", "PNL"]
+                for col in financial_cols:
+                    if col in df_loaded.columns:
+                        df_loaded[col] = pd.to_numeric(df_loaded[col], errors='coerce').fillna(0.0)
+                    else:
+                        st.warning(f"Warning: '{col}' column not found in 'live_dispatches' table. Financial calculations for this column will be zero.")
+                        df_loaded[col] = 0.0 # Add column with default 0.0 if missing
+
+                # Debug: Print columns and their types after processing
+                st.sidebar.markdown("---")
+                st.sidebar.write("### Debug Info (Live Dispatches After Processing):")
+                st.sidebar.write(f"Columns: {df_loaded.columns.tolist()}")
+                st.sidebar.write(f"DataFrame Info:\n{df_loaded.info(verbose=True, show_counts=True)}")
+                st.sidebar.write(f"Date column dtype: {df_loaded['Date'].dtype}")
+                st.sidebar.markdown("---")
+
+
                 return df_loaded
             else:
+                st.info("No data received from 'live_dispatches' table.")
                 return pd.DataFrame() # Return empty DataFrame if no data
         except Exception as e:
             st.error(f"Error loading live dispatches data: {e}")
             return pd.DataFrame()
+
     df_live_dispatches = load_live_dispatches_data()
+
     if not df_live_dispatches.empty:
+        # --- Existing SLA Counts Section ---
         total_rows = len(df_live_dispatches)
         st.write(f"**Total Number of Live Dispatches (excluding header):** {total_rows}")
+
         st.subheader("SLA Counts")
         known_slas = ['2 Hour', '4 Hour', '2 Day', '4 Day']
         sla_counts_series = df_live_dispatches['SLA'].value_counts()
         display_sla_counts = {sla: sla_counts_series.get(sla, 0) for sla in known_slas}
+        
         other_sla_count = 0
         for sla_val in df_live_dispatches['SLA'].unique():
-            if sla_val not in known_slas and pd.notna(sla_val) and sla_val != '':
+            if sla_val not in known_slas and pd.notna(sla_val) and sla_val.strip() != '':
                 other_sla_count += sla_counts_series.get(sla_val, 0)
         display_sla_counts['Other'] = other_sla_count
+
         st.write(f"**2 Hour SLA:** {display_sla_counts['2 Hour']}")
         st.write(f"**4 Hour SLA:** {display_sla_counts['4 Hour']}")
         st.write(f"**2 Day SLA:** {display_sla_counts['2 Day']}")
         st.write(f"**4 Day SLA:** {display_sla_counts['4 Day']}")
+        
         if display_sla_counts['Other'] > 0:
             st.write(f"**Other SLA Types:** {display_sla_counts['Other']}")
-            other_sla_df = df_live_dispatches[~df_live_dispatches['SLA'].isin(known_slas) & df_live_dispatches['SLA'].notna() & (df_live_dispatches['SLA'] != '')]
+            other_sla_df = df_live_dispatches[~df_live_dispatches['SLA'].isin(known_slas) & df_live_dispatches['SLA'].notna() & (df_live_dispatches['SLA'].astype(str).str.strip() != '')]
             st.dataframe(other_sla_df[['SLA']])
-        else:
-            st.info("No data found in 'live_dispatches' table or an error occurred.")
+        
+        st.subheader("SLA Distribution")
+        chart_data = pd.Series(display_sla_counts)
+        st.bar_chart(chart_data)
 
-
+        # --- New Monthly Financial Analysis Section ---
         st.header("Monthly Financial Analysis")
 
-        if "Date" in df_live_dispatches.columns and not df_live_dispatches['Date'].empty:
+        # The error specifically stated that .dt accessor could not be used
+        # This check confirms that the 'Date' column is indeed a datetime type
+        if "Date" in df_live_dispatches.columns and pd.api.types.is_datetime64_any_dtype(df_live_dispatches['Date']):
             # Create a 'YYYY-MM' column for grouping and display
             df_live_dispatches['MonthYear'] = df_live_dispatches['Date'].dt.strftime('%Y-%m')
             
@@ -681,10 +754,11 @@ def PAGE_4():
             else:
                 st.info("No valid month/year data found for financial analysis.")
         else:
-            st.info("Date column is missing or empty, unable to perform monthly financial analysis.")
+            # This 'else' block will now be hit if 'Date' column is missing or not datetime
+            st.info("Date column is missing or not correctly formatted as datetime, unable to perform monthly financial analysis.")
 
     else:
-        st.info("No data found in 'live_dispatches' table or an error occurred.")
+        st.info("No data found in 'live_dispatches' table or an error occurred during loading.")
 
 
 
