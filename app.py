@@ -576,31 +576,9 @@ def PAGE_3():
             st.info("No technicians found in the badging data to calculate percentages.")
     else:
         st.info("No badging data available to generate badging statistics.")
+
+
 def PAGE_4():
-import streamlit as st
-import pandas as pd
-
-# Assuming 'supabase' is your initialized Supabase client,
-# available globally or passed into PAGE_4.
-
-# Example placeholder (remove if you already have this elsewhere):
-# from supabase import create_client, Client
-# url: str = st.secrets["SUPABASE_URL"]
-# key: str = st.secrets["SUPABASE_KEY"]
-# supabase: Client = create_client(url, key)
-
-# Define a list of ALL_DISPLAY_COLUMNS if it's used globally in your app
-# (Assuming it's defined similarly to how you use it for badging_dispatches)
-# For 'live_dispatches', we primarily care about 'SLA', but if you display others,
-# you might want to include them here.
-# For the purpose of this SLA counting, we only need 'SLA'.
-# If 'ALL_DISPLAY_COLUMNS' is crucial for 'live_dispatches' beyond 'SLA',
-# you'll need to define it appropriately for 'live_dispatches'.
-# For now, let's assume we only need 'SLA' from live_dispatches.
-# If 'live_dispatches' also needs similar column normalization as 'badging_dispatches',
-# you would apply similar logic.
-
-def PAGE_4(supabase):
     st.title("PNL Report")
 
     st.header("Live Dispatches Statistics")
