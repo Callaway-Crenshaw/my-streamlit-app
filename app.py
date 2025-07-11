@@ -40,6 +40,10 @@ def home_page():
         """
         Page 3: Report on Badge Pickup Budget
         """)
+    st.markdown(
+        """
+        Page 4: Report on PNL
+        """)
     st.markdown("<br>" * 12, unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
@@ -572,6 +576,10 @@ def PAGE_3():
             st.info("No technicians found in the badging data to calculate percentages.")
     else:
         st.info("No badging data available to generate badging statistics.")
+def PAGE_4():
+    st.title("Badging Ticket Dispatches")
+    st.write("View, filter, and add your badging tickets.")
+
 
 
 # --- Main Application Logic ---
@@ -587,3 +595,5 @@ elif page_selection == "Page 2":
     PAGE_2()
 elif page_selection == "Reporting Page":
     PAGE_3()
+elif page_selection == "PNL Page":
+    PAGE_4()
