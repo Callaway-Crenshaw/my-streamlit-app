@@ -640,6 +640,7 @@ def PAGE_4():
             other_sla_df = df_live_dispatches[~df_live_dispatches['SLA'].isin(known_slas) & df_live_dispatches['SLA'].notna() & (df_live_dispatches['SLA'].astype(str).str.strip() != '')]
             st.dataframe(other_sla_df[['SLA']])
         # --- Monthly Financial Analysis Section ---
+        st.markdown("---")
         st.header("Monthly Financial Analysis")
         if "Date" in df_live_dispatches.columns and pd.api.types.is_datetime64_any_dtype(df_live_dispatches['Date']):
             df_live_dispatches['MonthYear'] = df_live_dispatches['Date'].dt.strftime('%Y-%m')
