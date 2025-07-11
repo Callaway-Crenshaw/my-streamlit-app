@@ -648,7 +648,7 @@ def PAGE_4():
                 # Get Site counts for the entire dataset, sorted by value (most tickets first)
                 site_breakdown_total = df_live_dispatches['Site'].value_counts().sort_values(ascending=False)
                 if not site_breakdown_total.empty:
-                    st.dataframe(site_breakdown_total.reset_index().rename(columns={'index': 'Site', 'Site': 'Site Code'}), hide_index=True)
+                    st.dataframe(site_breakdown_total.reset_index().rename(columns={'index': 'Site', 'Site': 'Site Code', 'count':'Ticket Volume'}), hide_index=True)
                 else:
                     st.info("No Site breakdown data available.")
             else:
