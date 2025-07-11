@@ -38,7 +38,7 @@ def home_page():
         """)
     st.markdown(
         """
-        Page 3: Report on Badge Pickup Budget, vhanges made
+        Page 3: Report on Badge Pickup Budget
         """)
     st.markdown(
         """
@@ -577,23 +577,21 @@ def PAGE_3():
     else:
         st.info("No badging data available to generate badging statistics.")
 def PAGE_4():
-    st.title("Badging Ticket Dispatches")
-    st.write("View, filter, and add your badging tickets.")
-
+    st.title("PNL Report")
 
 
 # --- Main Application Logic ---
 st.sidebar.title("Navigation")
 page_selection = st.sidebar.radio(
     "Go to",
-    ("Home", "Page 1", "Page 2", "Reporting Page"))
+    ("Home", "Badging Tickets", "Live Dispatches", "Reporting Page", "PNL Report"))
 if page_selection == "Home":
     home_page()
-elif page_selection == "Page 1":
+elif page_selection == "Badging Tickets":
     PAGE_1()
-elif page_selection == "Page 2":
+elif page_selection == "Live Dispatches":
     PAGE_2()
 elif page_selection == "Reporting Page":
     PAGE_3()
-elif page_selection == "PNL Page":
+elif page_selection == "PNL Report":
     PAGE_4()
