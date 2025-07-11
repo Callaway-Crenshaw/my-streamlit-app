@@ -580,7 +580,7 @@ def PAGE_3():
 
 def PAGE_4():
     st.title("PNL Report")
-    st.header("Live Dispatches Statistics")
+    st.header("Ticket Breakdown")
     @st.cache_data(ttl=300)
     def load_live_dispatches_data():
         try:
@@ -603,7 +603,7 @@ def PAGE_4():
                     return pd.DataFrame() # Return empty if Date column is critical for this page
                 if not pd.api.types.is_datetime64_any_dtype(df_loaded['Date']):
                     st.error(f"Error: 'Date' column is not a datetime type after conversion. Current type: {df_loaded['Date'].dtype}. Check date format in Supabase.")
-                    return pd.DataFrame() # Stop if Date is still not datetime
+                    return pd.DataFrame() 
                 financial_cols = ["Total FN Pay", "Total DXC Pay", "PNL"]
                 for col in financial_cols:
                     if col in df_loaded.columns:
@@ -621,8 +621,8 @@ def PAGE_4():
     df_live_dispatches = load_live_dispatches_data()
     if not df_live_dispatches.empty:
         total_rows = len(df_live_dispatches)
-        st.write(f"**Total Number of Live Dispatches (excluding header):** {total_rows}")
-        st.subheader("SLA Counts")
+        st.write(f"**Total Ticket Count:** {total_rows}")
+        st.subheader("Total Ticket Breakdown By SLA")
         known_slas = ['2 Hour', '4 Hour', '2 Day', '4 Day']
         sla_counts_series = df_live_dispatches['SLA'].value_counts()
         display_sla_counts = {sla: sla_counts_series.get(sla, 0) for sla in known_slas}
