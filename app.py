@@ -589,18 +589,11 @@ def PAGE_4():
             data = response.data
             if data:
                 df_loaded = pd.DataFrame(data)
-                st.sidebar.markdown("---")
-                st.sidebar.write("### Debug Info (Live Dispatches Initial Load):")
-                st.sidebar.write(f"Columns: {df_loaded.columns.tolist()}")
-                st.sidebar.write(f"DataFrame Info:\n{df_loaded.info(verbose=True, show_counts=True)}")
-                st.sidebar.markdown("---")
                 if "SLA" not in df_loaded.columns:
                     st.error("Error: 'SLA' column not found in 'live_dispatches' table. Please check your Supabase table schema.")
                     return pd.DataFrame()
                 df_loaded["SLA"] = df_loaded["SLA"].astype(str)
                 if "Date" in df_loaded.columns:
-                    # Explicitly define format if you know it, e.g., format='%Y-%m-%d'
-                    # This can make conversion more robust if date strings are consistent
                     df_loaded["Date"] = pd.to_datetime(df_loaded["Date"], errors='coerce', format='%Y-%m-%d')
                     initial_rows = len(df_loaded)
                     df_loaded.dropna(subset=['Date'], inplace=True)
@@ -649,23 +642,16 @@ def PAGE_4():
             st.dataframe(other_sla_df[['SLA']])
         # --- Monthly Financial Analysis Section ---
         st.header("Monthly Financial Analysis")
-
         if "Date" in df_live_dispatches.columns and pd.api.types.is_datetime64_any_dtype(df_live_dispatches['Date']):
             df_live_dispatches['MonthYear'] = df_live_dispatches['Date'].dt.strftime('%Y-%m')
-            
             month_year_options = sorted(df_live_dispatches['MonthYear'].unique(), reverse=True)
-
             if month_year_options:
                 selected_month_year = st.selectbox(
-                    "Select Month/Year for Report:", # Updated label
+                    "Select Month/Year for Report:",
                     options=month_year_options,
-                    index=0 # Default to the most recent month
-                )
-
+                    index=0)
                 df_filtered_month = df_live_dispatches[df_live_dispatches['MonthYear'] == selected_month_year].copy()
-
                 if not df_filtered_month.empty:
-                    # Financial Totals and Averages
                     st.subheader(f"Financial Summary for {selected_month_year}")
                     total_fn_pay = df_filtered_month["Total FN Pay"].sum()
                     total_dxc_pay = df_filtered_month["Total DXC Pay"].sum()
@@ -674,7 +660,6 @@ def PAGE_4():
                     avg_fn_pay_per_ticket = total_fn_pay / num_tickets_month if num_tickets_month > 0 else 0
                     avg_dxc_pay_per_ticket = total_dxc_pay / num_tickets_month if num_tickets_month > 0 else 0
                     avg_pnl_per_ticket = total_pnl / num_tickets_month if num_tickets_month > 0 else 0
-                    
                     col1, col2, col3 = st.columns(3)
                     with col1:
                         st.metric("Total Field Nation Pay", f"${total_fn_pay:,.2f}")
@@ -682,9 +667,7 @@ def PAGE_4():
                         st.metric("Total DXC Pay", f"${total_dxc_pay:,.2f}")
                     with col3:
                         st.metric("Total PNL", f"${total_pnl:,.2f}")
-
                     st.markdown("---") # Separator line
-
                     st.subheader(f"Average Pay Per Ticket for {selected_month_year}")
                     col4, col5, col6 = st.columns(3)
                     with col4:
@@ -693,14 +676,9 @@ def PAGE_4():
                         st.metric("Avg DXC Pay Per Ticket", f"${avg_dxc_pay_per_ticket:,.2f}")
                     with col6:
                         st.metric("Avg PNL Per Ticket", f"${avg_pnl_per_ticket:,.2f}")
-                    
                     st.markdown("---") # Separator line
-
-                    # --- New Ticket Breakdown Section ---
                     st.subheader(f"Ticket Breakdown for {selected_month_year}")
-
                     col_breakdown1, col_breakdown2 = st.columns(2)
-
                     with col_breakdown1:
                         st.write("#### By SLA Category")
                         # Get SLA counts for the filtered month
@@ -709,7 +687,6 @@ def PAGE_4():
                             st.dataframe(sla_breakdown_month.reset_index().rename(columns={'index': 'SLA Category', 'SLA': 'Ticket Count'}), hide_index=True)
                         else:
                             st.info("No SLA breakdown data for this month.")
-
                     with col_breakdown2:
                         st.write("#### By Site")
                         # Get Site counts for the filtered month
@@ -722,14 +699,12 @@ def PAGE_4():
                                 st.info("No Site breakdown data for this month.")
                         else:
                             st.info("Site column not available for breakdown.")
-
                 else:
                     st.info(f"No data available for {selected_month_year}.")
             else:
                 st.info("No valid month/year data found for financial analysis.")
         else:
             st.info("Date column is missing or not correctly formatted as datetime, unable to perform monthly financial analysis.")
-
     else:
         st.info("No data found in 'live_dispatches' table or an error occurred during loading.")
 
