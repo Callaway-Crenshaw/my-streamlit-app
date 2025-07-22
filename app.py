@@ -417,10 +417,9 @@ def PAGE_2():
             except Exception as e:
                 st.error(f"An error occurred while adding new live ticket: {e}")
     st.markdown("---")
-    st.header("Add New Canceled Work Order (CANCEL WOS)")
+    st.header("Add Canceled Work Order")
     priority_options = ["P4", "P3", "P2", "P1"]
     cancellation_type_options = ["Outside 24 HRS", "24-8 HRS", "8-0 HRS"]
-
     with st.form("new_cancel_wo_form", clear_on_submit=True):
         col1_cancel, col2_cancel = st.columns(2)
         with col1_cancel:
@@ -433,11 +432,8 @@ def PAGE_2():
             cancel_dxc_cost = st.number_input("DXC Cost:", value=0.0, min_value=0.0, format="%.2f", key="cancel_form_dxc_cost")
             cancel_fn_pay = st.number_input("FN Pay:", value=0.0, min_value=0.0, format="%.2f", key="cancel_form_fn_pay")
             cancel_ticket_num = st.text_input("Ticket #:", key="cancel_form_ticket_num")
-
         add_cancel_button = st.form_submit_button("Add New Canceled WO")
-
         if add_cancel_button:
-            # Basic validation
             if not cancel_site or not cancel_tech or not cancel_priority or not cancel_type or not cancel_ticket_num:
                 st.error("Please fill in all required fields (Site, Tech, Priority, Cancellation Type, Ticket #).")
             else:
@@ -449,15 +445,12 @@ def PAGE_2():
                     "Cancellation Type": cancel_type,
                     "DXC Cost": cancel_dxc_cost,
                     "FN Pay": cancel_fn_pay,
-                    "Ticket #": cancel_ticket_num
-                }
+                    "Ticket #": cancel_ticket_num}
                 try:
                     # Insert data into CANCEL WOS table
                     response = supabase.table("CANCEL WOS").insert([new_cancel_wo_data]).execute()
                     if response.data:
                         st.success("New canceled work order added to Supabase successfully!")
-                        # No need to clear cache for live_dispatches, as this is a different table
-                        # If you later implement a display for CANCEL WOS, you'd clear its cache here.
                         st.rerun() # Rerun to clear the form
                     else:
                         st.error(f"Failed to add new canceled WO: {response.status_code} - {response.status_code}")
