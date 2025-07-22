@@ -416,6 +416,56 @@ def PAGE_2():
                     st.json(response.data)
             except Exception as e:
                 st.error(f"An error occurred while adding new live ticket: {e}")
+    st.markdown("---")
+    st.header("Add New Canceled Work Order (CANCEL WOS)")
+
+    # Define options for Priority and Cancellation Type
+    priority_options = ["Low", "Medium", "High", "Critical"]
+    cancellation_type_options = ["Customer Cancel", "Tech Cancel", "Part Delay", "Other"]
+
+    with st.form("new_cancel_wo_form", clear_on_submit=True):
+        col1_cancel, col2_cancel = st.columns(2)
+        with col1_cancel:
+            cancel_date = st.date_input("Date:", value=datetime.today(), key="cancel_form_date")
+            cancel_site = st.selectbox("Site:", options=[""] + site_options, index=0, key="cancel_form_site_select")
+            cancel_tech = st.selectbox("Tech:", options=[""] + tech_options, index=0, key="cancel_form_tech_select")
+            cancel_priority = st.selectbox("Priority:", options=[""] + priority_options, index=0, key="cancel_form_priority")
+        with col2_cancel:
+            cancel_type = st.selectbox("Cancellation Type:", options=[""] + cancellation_type_options, index=0, key="cancel_form_type")
+            cancel_dxc_cost = st.number_input("DXC Cost:", value=0.0, min_value=0.0, format="%.2f", key="cancel_form_dxc_cost")
+            cancel_fn_pay = st.number_input("FN Pay:", value=0.0, min_value=0.0, format="%.2f", key="cancel_form_fn_pay")
+            cancel_ticket_num = st.text_input("Ticket #:", key="cancel_form_ticket_num")
+
+        add_cancel_button = st.form_submit_button("Add New Canceled WO")
+
+        if add_cancel_button:
+            # Basic validation
+            if not cancel_site or not cancel_tech or not cancel_priority or not cancel_type or not cancel_ticket_num:
+                st.error("Please fill in all required fields (Site, Tech, Priority, Cancellation Type, Ticket #).")
+            else:
+                new_cancel_wo_data = {
+                    "Date": cancel_date.strftime('%Y-%m-%d'),
+                    "Site": cancel_site,
+                    "Tech": cancel_tech,
+                    "Priority": cancel_priority,
+                    "Cancellation Type": cancel_type,
+                    "DXC Cost": cancel_dxc_cost,
+                    "FN Pay": cancel_fn_pay,
+                    "Ticket #": cancel_ticket_num
+                }
+                try:
+                    # Insert data into CANCEL WOS table
+                    response = supabase.table("CANCEL WOS").insert([new_cancel_wo_data]).execute()
+                    if response.data:
+                        st.success("New canceled work order added to Supabase successfully!")
+                        # No need to clear cache for live_dispatches, as this is a different table
+                        # If you later implement a display for CANCEL WOS, you'd clear its cache here.
+                        st.rerun() # Rerun to clear the form
+                    else:
+                        st.error(f"Failed to add new canceled WO: {response.status_code} - {response.status_code}")
+                        st.json(response.data)
+                except Exception as e:
+                    st.error(f"An error occurred while adding new canceled WO: {e}")
 
 def PAGE_3():
     st.title("Reporting on Startup Budget")
