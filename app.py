@@ -418,10 +418,8 @@ def PAGE_2():
                 st.error(f"An error occurred while adding new live ticket: {e}")
     st.markdown("---")
     st.header("Add New Canceled Work Order (CANCEL WOS)")
-
-    # Define options for Priority and Cancellation Type
-    priority_options = ["Low", "Medium", "High", "Critical"]
-    cancellation_type_options = ["Customer Cancel", "Tech Cancel", "Part Delay", "Other"]
+    priority_options = ["P4", "P3", "P2", "P1"]
+    cancellation_type_options = ["Outside 24 HRS", "24-8 HRS", "8-0 HRS"]
 
     with st.form("new_cancel_wo_form", clear_on_submit=True):
         col1_cancel, col2_cancel = st.columns(2)
