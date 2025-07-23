@@ -42,7 +42,7 @@ def home_page():
         """)
     st.markdown(
         """
-        Page 4: Report on PNL
+        Page 4: Report on P&L
         """)
     st.markdown("<br>" * 12, unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1, 1])
@@ -620,7 +620,7 @@ def PAGE_3():
 
 
 def PAGE_4():
-    st.title("PNL Report")
+    st.title("P&L Report")
     st.header("Ticket Breakdown")
     @st.cache_data(ttl=300)
     def load_live_dispatches_data():
@@ -722,7 +722,7 @@ def PAGE_4():
                     with col2:
                         st.metric("Total DXC Pay", f"${total_dxc_pay:,.2f}")
                     with col3:
-                        st.metric("Total PNL", f"${total_pnl:,.2f}")
+                        st.metric("Total P&L", f"${total_pnl:,.2f}")
                     st.markdown("---") # Separator line
                     st.subheader(f"Average Pay Per Ticket for {selected_month_year}")
                     col4, col5, col6 = st.columns(3)
@@ -731,7 +731,7 @@ def PAGE_4():
                     with col5:
                         st.metric("Avg DXC Pay Per Ticket", f"${avg_dxc_pay_per_ticket:,.2f}")
                     with col6:
-                        st.metric("Avg PNL Per Ticket", f"${avg_pnl_per_ticket:,.2f}")
+                        st.metric("Avg P&L Per Ticket", f"${avg_pnl_per_ticket:,.2f}")
                     st.markdown("---") # Separator line
                     st.subheader(f"Ticket Breakdown for {selected_month_year}")
                     col_breakdown1, col_breakdown2 = st.columns(2)
@@ -772,7 +772,7 @@ def PAGE_4():
 st.sidebar.title("Navigation")
 page_selection = st.sidebar.radio(
     "Go to",
-    ("Home", "Badging Tickets", "Live Dispatches", "Reporting Page", "PNL Report"))
+    ("Home", "Badging Tickets", "Live Dispatches", "Reporting Page", "P&L Report"))
 if page_selection == "Home":
     home_page()
 elif page_selection == "Badging Tickets":
@@ -781,5 +781,5 @@ elif page_selection == "Live Dispatches":
     PAGE_2()
 elif page_selection == "Reporting Page":
     PAGE_3()
-elif page_selection == "PNL Report":
+elif page_selection == "P&L Report":
     PAGE_4()
